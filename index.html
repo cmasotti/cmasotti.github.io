@@ -1,0 +1,222 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>cmasotti.GitHub.io by cmasotti</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">cmasotti.GitHub.io</h1>
+        <p class="header">RNAseq_tutorial</p>
+
+
+
+        <ul>
+          <li><a class="buttons github" href="https://github.com/cmasotti">GitHub Profile</a></li>
+        </ul>
+
+      </header>
+      <section>
+        <h1>
+<a id="1st-summer-school-of-bioinformatics---15th-to-19th-february-2016" class="anchor" href="#1st-summer-school-of-bioinformatics---15th-to-19th-february-2016" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><strong>1st Summer School of Bioinformatics - 15th to 19th February, 2016</strong>
+</h1>
+
+<h2>
+<a id="rnaseq-tutorial" class="anchor" href="#rnaseq-tutorial" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>RNAseq tutorial</h2>
+
+<p><strong><em>by <a href="mailto:cmasotti@mochsl.org.br">cmasotti@mochsl.org.br</a></em></strong>  </p>
+
+<p>Learning objectives of this "hands-on" part of the course:</p>
+
+<ul>
+<li>Provide a working example of RNAseq raw-data analysis pipeline<br>
+</li>
+<li>Run major analysis steps in a reasonable amount of time with modest computer resources<br>
+</li>
+<li>Get familiar with command-line based softwares<br>
+</li>
+<li>Get familiar with major file formats (inputs and outputs)<br>
+</li>
+<li>Get familiar with gene expression estimates<br>
+</li>
+<li>Discuss common technical issues related to RNAseq studies<br>
+</li>
+<li>Get help outside of this course<br>
+</li>
+</ul>
+
+<p>This tutorial includes:  </p>
+
+<ul>
+<li>Softwares to install: not all softwares will necessarily presented<br>
+</li>
+<li>Files to download: see analysis pipeline for "saving files" instructions<br>
+</li>
+<li>Analysis pipeline: based on Tuxedo protocol (Trapnell et al. 2012)</li>
+</ul>
+
+<h1>
+<a id="analysis-pipeline" class="anchor" href="#analysis-pipeline" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Analysis Pipeline</h1>
+
+<h2>
+<a id="information-about-rnaseq-data-used-in-this-tutorial" class="anchor" href="#information-about-rnaseq-data-used-in-this-tutorial" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Information about RNAseq data used in this tutorial</h2>
+
+<p><strong>SRA=Sequence Read Archive</strong><br>
+<a href="http://www.ncbi.nlm.nih.gov/sra">http://www.ncbi.nlm.nih.gov/sra</a><br>
+Raw sequencing and alignment data available to research community!  </p>
+
+<p><strong>Illumina Human Body Map 2.0 Transcriptome Project</strong><br>
+<a href="http://www.ncbi.nlm.nih.gov/Traces/study/">http://www.ncbi.nlm.nih.gov/Traces/study/</a><br>
+SRA Study: ERP000546<br>
+Samples: ERR030874, ERR030872, ERR030875, ERR030873, ERR030876, ERR030885, ERR030878, ERR030882, ERR030886, ERR030887, ERR030883, ERR030880, ERR030881, ERR030877, ERR030884, ERR030879.  </p>
+
+<h2>
+<a id="files-to-download" class="anchor" href="#files-to-download" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Files to download</h2>
+
+<h3>
+<a id="reference-files" class="anchor" href="#reference-files" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Reference files</h3>
+
+<p>We need a genome against which to align our reads (fasta file):<br>
+Download the reference genome from <em>UCSC Browser</em> (hg19 – GRCh37; Feb 2009 assembly):    </p>
+
+<div class="highlight highlight-source-shell"><pre>wget http://hgdownload.cse.ucsc.edu/goldenPath/hg19/chromosomes/chr19.fa.gz  
+gunzip chr19.fa.gz  </pre></div>
+
+<p>We need a reference gene annotation to quantify expression of known transcripts (.gtf file):<br>
+Download the <em>human GENCODE Gene Set</em>:<br>
+GENCODE: <a href="http://www.gencodegenes.org/releases/">http://www.gencodegenes.org/releases/</a>  </p>
+
+<div class="highlight highlight-source-shell"><pre>wget ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_16/gencode.v16.annotation.gtf.gz  
+gunzip gencode.v16.annotation.gtf.gz  
+grep chr19 gencode.v16.annotation.gtf <span class="pl-k">&gt;</span> gencode.v16.annotation_chr19.gtf  </pre></div>
+
+<h2>
+<a id="working-files" class="anchor" href="#working-files" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Working files</h2>
+
+<p>In working directory, download the following files:<br>
+Genome index (used to generate Bowtie2 indexes): <strong>hg19_chr19.fa</strong><br>
+Transcript annotations: <strong>gencode.v16.annotation_chr19.gtf</strong><br>
+Source scripts: <strong>sources/source_step1 to step5</strong>  </p>
+
+<p>In working directory, create the following directories:  </p>
+
+<div class="highlight highlight-source-shell"><pre>mkdir sources  
+mkdir fastq_chr19  
+mkdir index_chr19  
+mkdir fpkm_files  </pre></div>
+
+<p>In <strong>fastq_chr19/</strong>, save fastq files:<br>
+<strong>brain_end1.fastq.gz</strong><br>
+<strong>brain_end2.fastq.gz</strong><br>
+In <strong>brain/</strong>, save: 
+<strong>brain_chr19.q20.sorted.bam</strong> (chr19, Bowtie2 aligned, Q&gt;=20, sorted)<br>
+In <strong>fpkm_files/</strong>, save:<br>
+<strong>brain_genes.fpkm_tracking, leukocyte_genes.fpkm_tracking, etc.</strong></p>
+
+<p>## Pipeline  </p>
+
+<p>Firstly, test software installation by directly typing their names on prompt.<br>
+If they were correctly added to $PATH, a list of parameters is shown.<br>
+All applications herein used are very well documented, and parameters are explained in <strong>--help command</strong> (e.g., bowtie2 –help) or online manuals.  </p>
+
+<p>Working directory: <strong>~source/</strong>  </p>
+
+<h3>
+<a id="step1-creating-bowtie2-genome-index" class="anchor" href="#step1-creating-bowtie2-genome-index" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Step1: Creating Bowtie2 genome index</h3>
+
+<p>(<em>source_step1</em>)  </p>
+
+<p>Tophat2 requires the reference <strong>.fa</strong> file in the same directory of Bowtie2 indexes.<br>
+Move <strong>hg19_chr19.fa</strong> to <strong>index_chr19/</strong>.  </p>
+
+<div class="highlight highlight-source-shell"><pre>bowtie2-build ../index_chr19/hg19_chr19.fa index_chr19/hg19_chr19  
+<span class="pl-c"># Bowtie2 will create six files:  </span>
+<span class="pl-c"># hg19_chr19.1.bt2  </span>
+<span class="pl-c"># hg19_chr19.2.bt2  </span>
+<span class="pl-c"># hg19_chr19.3.bt2  </span>
+<span class="pl-c"># hg19_chr19.4.bt2  </span>
+<span class="pl-c"># hg19_chr19.rev.1.bt2  </span>
+<span class="pl-c"># hg19_chr19.rev.2.bt2  </span></pre></div>
+
+<h3>
+<a id="step2-creating-bowtie2-transcriptome-index" class="anchor" href="#step2-creating-bowtie2-transcriptome-index" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Step2: Creating Bowtie2 transcriptome index</h3>
+
+<p>(<em>source_step2</em>)  </p>
+
+<p>In order to align the reads to known transcripts, Bowtie2 creates an index (and other associated files) to transcriptome sequences.<br>
+In case multiple Tophat2 runs are planned with the same transcriptome, the first run must include <strong>–G/--GTF</strong> together with <strong>–transcriptome-index</strong> option to create transcriptome index files.<br>
+<strong>–G</strong> is not necessary for subsequent runs.  </p>
+
+<div class="highlight highlight-source-shell"><pre>tophat2 -G ../gencode.v16.annotation_chr19.gtf --transcriptome-index=../gtf_index/gencode.v16.annotation_chr19 ../index_chr19/hg19_chr19  </pre></div>
+
+<h3>
+<a id="step3-perform-alignment-with-tophat2" class="anchor" href="#step3-perform-alignment-with-tophat2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Step3: Perform alignment with Tophat2</h3>
+
+<p>(<em>source_step3</em>)  </p>
+
+<p><em><a href="https://ccb.jhu.edu/software/tophat/tutorial.shtml#ref">https://ccb.jhu.edu/software/tophat/tutorial.shtml#ref</a></em><br>
+<em>TopHat map reads firstly by running Bowtie, which identifies places where reads map end to end.</em><br>
+<em>Bowtie will identify “islands” in your reference genome where reads piled up. Many of these islands will be exons.</em>
+<em>TopHat will then find splice junctions using the reads that did not get mapped to an island.</em>  </p>
+
+<div class="highlight highlight-source-shell"><pre>tophat2 -p 3 --no-coverage-search --transcriptome-index=../gtf_index/gencode.v16.annotation_chr19 -o ../brain ../index_chr19/hg19_chr19 ../fastq_chr19/brain_end1.fastq.gz ../fastq_chr19/brain_end2.fastq.gz   </pre></div>
+
+<p>Look for parameters explanation with <strong>tophat2 –-help</strong>.   </p>
+
+<p>TopHat will output a <strong>.bam</strong> file in the output directory <strong>brain/</strong>.  </p>
+
+<h3>
+<a id="step4-quality-control-of-alignment-samtools" class="anchor" href="#step4-quality-control-of-alignment-samtools" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Step4: Quality control of alignment (SAMtools)</h3>
+
+<p>(<em>souce_step4</em>)  </p>
+
+<p>Load fastQC, open and compare files:<br>
+<strong>brain_end1.fastq.gz X brain_end2.fastq.gz X brain_chr19.q20.sorted</strong>  </p>
+
+<p>Select reads with Q&gt;=20 through SAMtools and sort <strong>.bam</strong> files.  </p>
+
+<div class="highlight highlight-source-shell"><pre>mv ../brain/accepted_hits.bam ../brain/brain_chr19.bam  
+samtools view -b -q20 ../brain/brain_chr19.bam <span class="pl-k">&gt;</span> ../brain/brain_chr19.q20.bam  
+samtools sort  ../brain/brain_chr19.q20.bam ../brain/brain_chr19.q20.sorted  
+rm -f ../brain/brain_chr19.q20.bam  </pre></div>
+
+<h3>
+<a id="step5-estimating-gene-expression-with-cufflinks" class="anchor" href="#step5-estimating-gene-expression-with-cufflinks" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Step5: Estimating gene expression with Cufflinks</h3>
+
+<p>(<em>source_step5</em>)  </p>
+
+<div class="highlight highlight-source-shell"><pre>cufflinks -p 3 -G ../gencode.v16.annotation_chr19.gtf -o ../brain  ../brain/brain_chr19.q20.sorted.bam   </pre></div>
+
+<p>Cufflinks will generate several files, including <strong>genes.fpkm_tracking</strong>, which includes gene-level <strong>FPKM</strong> estimations.<br>
+ a. Look at the same files that were generated for several tissues in <strong>fpkm_files/</strong>.<br>
+ b. Understand FPKM estimations (Trapnell et al., 2012).<br>
+ c. Explore data by loading and plotting results in <strong>R</strong>.  </p>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		          <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-73393434-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
